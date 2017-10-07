@@ -35,6 +35,18 @@ public:
 	}
 };
 
+class OnComboBoxSelChanged : public INotificationCommand{
+public:
+	WndEdit*		edit;
+	WndComboBox*	combobox;
+
+	OnComboBoxSelChanged(WndEdit* edit, WndComboBox* combobox) : edit(edit), combobox(combobox){}
+
+	virtual void notify(){
+		edit->setWindowText(combobox->getSelectedText());
+	}
+};
+
 class OnListBoxDblClick : public INotificationCommand{
 public:
 	WndEdit*	edit;
@@ -55,7 +67,7 @@ public:
 	OnLabelClick(WndLabel* label) : label(label){}
 
 	virtual void notify(){
-		MessageBox(label->getParentWindow(), label->getWindowText().c_str(), "CLICKED", MB_OK);
+		MessageBox(label->getParentWindow(), label->getWindowText().c_str(), "Label (STATIC) control clicked", MB_OK);
 	}
 };
 
@@ -66,6 +78,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	static WndScrollBar*	myScrollBar;
 	static WndListBox*		myListBox;
 	static WndLabel*		myLabel;
+	static WndComboBox*		myComboBox;
 	switch(msg){
 		case WM_CREATE:
 			{
@@ -74,73 +87,74 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);
 				font = CreateFontIndirect(&ncm.lfStatusFont);
 
-				myEdit = new WndEdit(
-						"some edit stuff",
-						ws::window::ws_child 
-						| ws::window::ws_visible 
-						| ws::window::ws_hscrollbar
-						| ws::window::ws_vscrollbar
-						| ws::edit::es_autohscroll 
-						| ws::edit::es_autovscroll 
-						| ws::edit::es_multiline,
-						100,
-						0,
-						100,
-						50,
-						hWnd,
-						(HMENU) 5000,
-						hInst,
-						NULL
+				myEdit = new WndEdit(				// Create WndEdit control object
+						"some edit stuff",			// text to set in edit control
+						ws::window::ws_child		// control styles: as child window
+						| ws::window::ws_visible	// as visible window
+						| ws::window::ws_hscrollbar	// as window with horizontal scroll bar
+						| ws::window::ws_vscrollbar	// as window with vertical scroll bar
+						| ws::edit::es_autohscroll	// as edit control with auto horizontal scroll
+						| ws::edit::es_autovscroll	// as edit control with auto vertical scroll
+						| ws::edit::es_multiline,	// as multiline edit control
+						100,						// x - position
+						0,							// y - position
+						100,						// width
+						50,							// height
+						hWnd,						// handle to parent window
+						(HMENU) 5000,				// in this case id of control
+						hInst,						// handle to application instance
+						NULL						// pointer to some extra data stuff (in this cas NULL means no extra data stuff)
 					);
-
+				// set myEdit object control font
 				myEdit->setFont(font);
 
-				myScrollBar = new WndScrollBar(
-						ws::window::ws_child|
-						ws::window::ws_visible|
-						ws::scrollbar::sbs_horizontal,
-						100,
-						50,
-						100,
-						20,
-						hWnd,
-						(HMENU) 5001,
-						hInst,
-						NULL
+				myScrollBar = new WndScrollBar(			// create WndScrollBar object of control ScrollBar
+						ws::window::ws_child|			// Style of control: as child
+						ws::window::ws_visible|			// as visible
+						ws::scrollbar::sbs_horizontal,	// as hotizontal scroll bar
+						100,							// x - position
+						50,								// y - position
+						100,							// width
+						20,								// height
+						hWnd,							// parent window handle
+						(HMENU) 5001,					// in this case it is a id of control
+						hInst,							// handle to application instance
+						NULL							// pointer to some extra data stuff (in this cas NULL means no extra data stuff)
 					);
 
-				SCROLLINFO si;
+				SCROLLINFO si;	// structure describe setting of scroll bar control
 
-				si.cbSize		= sizeof(SCROLLINFO);
-				si.fMask		= SIF_ALL;
-				si.nMax			= 110;
-				si.nMin			= 0;
-				si.nPage		= 11;
-				si.nPos			= 0;
-				si.nTrackPos	= 0;
+				si.cbSize		= sizeof(SCROLLINFO);	// this parameter must be set
+				si.fMask		= SIF_ALL;				// flag describing whitch of struct field will be used
+				si.nMax			= 110;					// maximum value + nPage - 1
+				si.nMin			= 0;					// minimum value
+				si.nPage		= 11;					// page scrolling size
+				si.nPos			= 0;					// current scroll bar pos
+				si.nTrackPos	= 0;					// current track pos
 
-				myScrollBar->setScrollInfo(&si, false);
-				myScrollBar->setThumbtract(true);
-
+				myScrollBar->setScrollInfo(&si, false); // set settings of scrollbar
+				myScrollBar->setThumbtract(true); // this means that when user move control slider then value of nPos Scroll Bar is changed
+				// add some notification command for myScrollBar object control
 				myScrollBar->addNotification(WndScrollBar::notifications::wmscroll, new OnScrollChanged(myEdit, myScrollBar));
 				
-				myListBox = new WndListBox(
-					ws::window::ws_hscrollbar|
-					ws::window::ws_vscrollbar|
-					ws::window::ws_child|
-					ws::window::ws_visible|
-					ws::listbox::lbs_notify|
-					ws::listbox::lbs_hasstrings,
-					100,
-					70,
-					100,
-					100,
-					hWnd,
-					(HMENU) 5002,
-					hInst,
-					NULL
+				myListBox = new WndListBox(		// create WndListBox window object
+					ws::window::ws_hscrollbar|	// with styla: hotizontal scrollbar
+					ws::window::ws_vscrollbar|	// vertical scrollbar
+					ws::window::ws_child|		// as child window
+					ws::window::ws_visible|		// as visible widnow
+					ws::listbox::lbs_notify|	// with sending notification code
+					ws::listbox::lbs_hasstrings,// with string data item
+					100,						// x-position
+					70,							// y-position
+					100,						// control width
+					100,						// control height
+					hWnd,						// parent window handle
+					(HMENU) 5002,				// in this case it is an window ID
+					hInst,						// application instance handle
+					NULL						// pointer to some extra data (in this case NULL - means no extra data)
 				);
 
+				// add items to list box
 				myListBox->addTextItem("Polska");
 				myListBox->addTextItem("Czechy");
 				myListBox->addTextItem("S³owacja");
@@ -149,30 +163,60 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				myListBox->addTextItem("Estonia");
 				myListBox->addTextItem("Wêgry");
 				myListBox->addTextItem("Stany Zjednoczone Ameryki");
-
+				// set myListBox font
 				myListBox->setFont(font);
+				// add some notifications stuff
+				myListBox->addNotification(WndListBox::notifications::selchange, new OnListBoxSelChanged(myEdit, myListBox)); // notification command for selchange notify
+				myListBox->addNotification(WndListBox::notifications::doubleclick, new OnListBoxDblClick(myEdit, myListBox)); // notification command for doubleclick notify
 
-				myListBox->addNotification(WndListBox::notifications::selchange, new OnListBoxSelChanged(myEdit, myListBox));
-				myListBox->addNotification(WndListBox::notifications::doubleclick, new OnListBoxDblClick(myEdit, myListBox));
-
-				myLabel = new WndLabel(
-							"Label",
-							ws::window::ws_child|
-							ws::window::ws_visible|
-							ws::label::ss_notify,
-							100,
-							170,
-							100,
-							20,
-							hWnd,
-							(HMENU) 5003,
-							hInst,
-							NULL
+				myLabel = new WndLabel(				// create WndLabel object of Static control
+							"Label",				// text to write in window
+							ws::window::ws_child|	// window style: as child
+							ws::window::ws_visible|	// as visible
+							ws::label::ss_notify,	// with sending notifications to parent window
+							100,					// x - position
+							170,					// y - position
+							100,					// width
+							20,						// height
+							hWnd,					// parent window handle
+							(HMENU) 5003,			// in this case id of cotrol
+							hInst,					// handle to application instance
+							NULL					// pointer to some extra data (in this case NULL - means no extra data)
 						);
-
+				// set myLabel font
 				myLabel->setFont(font);
-
+				// add notification command object to myLabel control
 				myLabel->addNotification(WndLabel::notifications::clicked, new OnLabelClick(myLabel));
+
+				myComboBox = new WndComboBox(			// create WndComboBox class object of combobox control
+						ws::window::ws_child|			// with style: as child
+						ws::window::ws_visible|			// as visible
+						ws::window::ws_vscrollbar|		// with vertical scrollbar
+						ws::combobox::cbs_hasstrings|	// with string data for stored items
+						ws::combobox::cbs_dropdown,		// with drop down list
+						100,							// x - position
+						190,							// y - position
+						100,							// width
+						100,							// height (including drop down list height)
+						hWnd,							// handle to parent window
+						(HMENU) 5004,					// in this case control id
+						hInst,							// application instance handle
+						NULL							// pointer to some extra data (in this case NULL - means no extra data)
+					);
+
+				// add items to combo box
+				myComboBox->addTextItem("Polska");
+				myComboBox->addTextItem("Czechy");
+				myComboBox->addTextItem("S³owacja");
+				myComboBox->addTextItem("Litwa");
+				myComboBox->addTextItem("£otwa");
+				myComboBox->addTextItem("Estonia");
+				myComboBox->addTextItem("Wêgry");
+				myComboBox->addTextItem("Stany Zjednoczone Ameryki");
+
+				myComboBox->setFont(font);
+
+				myComboBox->addNotification(WndComboBox::notifications::selchange, new OnComboBoxSelChanged(myEdit, myComboBox));
 			}
 			break;
 		case WM_HSCROLL:
@@ -191,9 +235,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				UINT id = LOWORD(wParam);
 				HWND ctrl = (HWND) lParam;
 
-				if(myListBox->notify(ctrl, id, nc))
+				if(myListBox->notify(ctrl, id, nc)) // doing notification stuff for myListBox control object
 					break;
-				if(myLabel->notify(ctrl, id, nc))
+				if(myLabel->notify(ctrl, id, nc)) // doing notification stuff for myLabel control object
+					break;
+				if(myComboBox->notify(ctrl, id, nc)) // doing notification stuff for myComboBox control object
 					break;
 			}
 			break;
