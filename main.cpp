@@ -1,6 +1,11 @@
 #include <windows.h>
 
-#include "controls_windows.h"
+#include "wndbutton.h"
+#include "wndedit.h"
+#include "wndscrollbar.h"
+#include "wndlabel.h"
+#include "wndcombobox.h"
+#include "wndlistbox.h"
 
 HINSTANCE hInst;
 
@@ -39,7 +44,18 @@ public:
 
 	virtual void notify(){
 		
-		MessageBox(NULL, listbox->getItemText(listbox->getCurrentSelectedIndex()).c_str(), "CLICKED", MB_OK);
+		MessageBox(listbox->getParentWindow(), listbox->getItemText(listbox->getCurrentSelectedIndex()).c_str(), "CLICKED", MB_OK);
+	}
+};
+
+class OnLabelClick : public INotificationCommand{
+public:
+	WndLabel* label;
+
+	OnLabelClick(WndLabel* label) : label(label){}
+
+	virtual void notify(){
+		MessageBox(label->getParentWindow(), label->getWindowText().c_str(), "CLICKED", MB_OK);
 	}
 };
 
@@ -49,6 +65,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	static WndEdit*			myEdit;
 	static WndScrollBar*	myScrollBar;
 	static WndListBox*		myListBox;
+	static WndLabel*		myLabel;
 	switch(msg){
 		case WM_CREATE:
 			{
@@ -137,6 +154,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 
 				myListBox->addNotification(WndListBox::notifications::selchange, new OnListBoxSelChanged(myEdit, myListBox));
 				myListBox->addNotification(WndListBox::notifications::doubleclick, new OnListBoxDblClick(myEdit, myListBox));
+
+				myLabel = new WndLabel(
+							"Label",
+							ws::window::ws_child|
+							ws::window::ws_visible|
+							ws::label::ss_notify,
+							100,
+							170,
+							100,
+							20,
+							hWnd,
+							(HMENU) 5003,
+							hInst,
+							NULL
+						);
+
+				myLabel->setFont(font);
+
+				myLabel->addNotification(WndLabel::notifications::clicked, new OnLabelClick(myLabel));
 			}
 			break;
 		case WM_HSCROLL:
@@ -157,6 +193,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 
 				if(myListBox->notify(ctrl, id, nc))
 					break;
+				if(myLabel->notify(ctrl, id, nc))
+					break;
 			}
 			break;
 		case WM_DESTROY:
@@ -167,6 +205,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 					delete myEdit;
 				if(myListBox)
 					delete myListBox;
+				if(myLabel)
+					delete myLabel;
 			}
 			break;
 	}
