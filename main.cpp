@@ -1,11 +1,6 @@
 #include <windows.h>
 
-#include "wndbutton.h"
-#include "wndedit.h"
-#include "wndscrollbar.h"
-#include "wndlabel.h"
-#include "wndcombobox.h"
-#include "wndlistbox.h"
+#include "all_basic_controls.h"
 
 HINSTANCE hInst;
 
