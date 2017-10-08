@@ -66,6 +66,22 @@ public:
 	}
 };
 
+class OnButtonClicked : public INotificationCommand{
+public:
+	WndButton*	button;
+	WndEdit*	edit;
+
+	OnButtonClicked(WndButton* button, WndEdit* edit) : button(button), edit(edit) {}
+
+	virtual void notify(){
+		if(button->toggleButtonState() == WndButton::checkState::checked ){
+			edit->setWindowText("Button checked");
+		}else{
+			edit->setWindowText("Button unchecked");
+		}
+	}
+};
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	static HFONT			font;
 
@@ -74,6 +90,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	static WndListBox*		myListBox;
 	static WndLabel*		myLabel;
 	static WndComboBox*		myComboBox;
+	static WndButton*		myButton;
 	switch(msg){
 		case WM_CREATE:
 			{
@@ -212,6 +229,27 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				myComboBox->setFont(font);
 
 				myComboBox->addNotification(WndComboBox::notifications::selchange, new OnComboBoxSelChanged(myEdit, myComboBox));
+
+				myButton = new WndButton(
+						"Kliknij",
+						ws::window::ws_child|
+						ws::window::ws_visible|
+						ws::button::bs_notify,
+						100,
+						214,
+						100,
+						20,
+						hWnd,
+						(HMENU) 5004,
+						hInst,
+						NULL
+					);
+
+				myButton->setFont(font);
+
+				myButton->setCheckBoxStyle(true);
+
+				myButton->addNotification(WndButton::notifications::clicked, new OnButtonClicked(myButton, myEdit));
 			}
 			break;
 		case WM_HSCROLL:
@@ -236,6 +274,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 					break;
 				if(myComboBox->notify(ctrl, id, nc)) // doing notification stuff for myComboBox control object
 					break;
+				if(myButton->notify(ctrl, id, nc))
+					break;
 			}
 			break;
 		case WM_DESTROY:
@@ -248,6 +288,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 					delete myListBox;
 				if(myLabel)
 					delete myLabel;
+				if(myComboBox)
+					delete myComboBox;
+				if(myScrollBar)
+					delete myScrollBar;
+				if(myButton)
+					delete myButton;
 			}
 			break;
 	}
