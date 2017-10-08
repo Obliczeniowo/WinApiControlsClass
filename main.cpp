@@ -69,15 +69,42 @@ public:
 class OnButtonClicked : public INotificationCommand{
 public:
 	WndButton*	button;
+
+	OnButtonClicked(WndButton* button) : button(button) {}
+
+	virtual void notify(){
+		MessageBox(button->getParentWindow(), "Klikn¹³eœ przycisk", "CLICKED", MB_OK);
+	}
+};
+
+class OnCheckBoxButtonClicked : public INotificationCommand{
+public:
+	WndButton*	button;
 	WndEdit*	edit;
 
-	OnButtonClicked(WndButton* button, WndEdit* edit) : button(button), edit(edit) {}
+	OnCheckBoxButtonClicked(WndButton* button, WndEdit* edit) : button(button), edit(edit) {}
 
 	virtual void notify(){
 		if(button->toggleButtonState() == WndButton::checkState::checked ){
-			edit->setWindowText("Button checked");
+			edit->setWindowText("Check box button checked");
 		}else{
-			edit->setWindowText("Button unchecked");
+			edit->setWindowText("Check box button unchecked");
+		}
+	}
+};
+
+class OnRadioButtonClicked : public INotificationCommand{
+public:
+	WndButton*	button;
+	WndEdit*	edit;
+
+	OnRadioButtonClicked(WndButton* button, WndEdit* edit) : button(button), edit(edit) {}
+
+	virtual void notify(){
+		if(button->toggleButtonState() == WndButton::checkState::checked ){
+			edit->setWindowText("Radio button checked");
+		}else{
+			edit->setWindowText("Radio button unchecked");
 		}
 	}
 };
@@ -91,6 +118,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	static WndLabel*		myLabel;
 	static WndComboBox*		myComboBox;
 	static WndButton*		myButton;
+	static WndButton*		myRadioButton;
+	static WndButton*		myCheckBoxButton;
+
+	static std::vector<IControlWindow*> wndInterfaces;
+
 	switch(msg){
 		case WM_CREATE:
 			{
@@ -230,26 +262,77 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 
 				myComboBox->addNotification(WndComboBox::notifications::selchange, new OnComboBoxSelChanged(myEdit, myComboBox));
 
-				myButton = new WndButton(
-						"Kliknij",
-						ws::window::ws_child|
-						ws::window::ws_visible|
-						ws::button::bs_notify,
-						100,
-						214,
-						100,
-						20,
-						hWnd,
-						(HMENU) 5004,
-						hInst,
-						NULL
+				myButton = new WndButton(		// create button control
+						"Kliknij",				// button text
+						ws::window::ws_child|	// button style: as child
+						ws::window::ws_visible|	// as visible
+						ws::button::bs_notify,	// with notification command send to the parent window
+						100,					// x - position
+						214,					// y - position
+						100,					// width
+						20,						// height
+						hWnd,					// parent window handle
+						(HMENU) 5004,			// in this case window id
+						hInst,					// hadle to application instance
+						NULL					// pointer to some extra data (in this case NULL - means no extra data)
 					);
 
 				myButton->setFont(font);
 
-				myButton->setCheckBoxStyle(true);
+				myButton->addNotification(WndButton::notifications::clicked, new OnButtonClicked(myButton));
 
-				myButton->addNotification(WndButton::notifications::clicked, new OnButtonClicked(myButton, myEdit));
+				myCheckBoxButton = new WndButton(	// create button control
+						"Kliknij",					// button text
+						ws::window::ws_child|		// button style: as child
+						ws::window::ws_visible|		// as visible
+						ws::button::bs_notify,		// with notification command send to the parent window
+						100,						// x - position
+						234,						// y - position
+						100,						// width
+						20,							// height
+						hWnd,						// parent window handle
+						(HMENU) 5004,				// in this case window id
+						hInst,						// hadle to application instance
+						NULL						// pointer to some extra data (in this case NULL - means no extra data)
+					);
+
+				myCheckBoxButton->setFont(font);
+
+				myCheckBoxButton->setCheckBoxStyle(true);
+
+				myCheckBoxButton->addNotification(WndButton::notifications::clicked, new OnCheckBoxButtonClicked(myCheckBoxButton, myEdit));
+
+				myRadioButton = new WndButton(	// create radio button control
+						"Kliknij",				// button text
+						ws::window::ws_child|	// button style: as child
+						ws::window::ws_visible|	// as visible
+						ws::button::bs_notify,	// with notification command send to the parent window
+						100,					// x - position
+						254,					// y - position
+						100,					// width
+						20,						// height
+						hWnd,					// parent window handle
+						(HMENU) 5004,			// in this case window id
+						hInst,					// hadle to application instance
+						NULL					// pointer to some extra data (in this case NULL - means no extra data)
+					);
+
+				myRadioButton->setFont(font);
+
+				myRadioButton->setCheckBoxStyle(true);
+
+				myRadioButton->addNotification(WndButton::notifications::clicked, new OnRadioButtonClicked(myRadioButton, myEdit));
+
+				myRadioButton->setRadioButtonStyle(true);
+
+				wndInterfaces.push_back(myEdit);
+				wndInterfaces.push_back(myScrollBar);
+				wndInterfaces.push_back(myListBox);
+				wndInterfaces.push_back(myLabel);
+				wndInterfaces.push_back(myComboBox);
+				wndInterfaces.push_back(myButton);
+				wndInterfaces.push_back(myCheckBoxButton);
+				wndInterfaces.push_back(myRadioButton);
 			}
 			break;
 		case WM_HSCROLL:
@@ -267,33 +350,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				UINT nc = HIWORD(wParam);
 				UINT id = LOWORD(wParam);
 				HWND ctrl = (HWND) lParam;
-
-				if(myListBox->notify(ctrl, id, nc)) // doing notification stuff for myListBox control object
-					break;
-				if(myLabel->notify(ctrl, id, nc)) // doing notification stuff for myLabel control object
-					break;
-				if(myComboBox->notify(ctrl, id, nc)) // doing notification stuff for myComboBox control object
-					break;
-				if(myButton->notify(ctrl, id, nc))
-					break;
+				
+				for(std::vector<IControlWindow*>::iterator interf = wndInterfaces.begin(); interf < wndInterfaces.end(); interf++){
+					if((*interf)->notify(ctrl, id, nc)) // do notifications of controls stuff
+						break;
+				}
 			}
 			break;
 		case WM_DESTROY:
 			{
 				PostQuitMessage(0);
-
-				if(myEdit)
-					delete myEdit;
-				if(myListBox)
-					delete myListBox;
-				if(myLabel)
-					delete myLabel;
-				if(myComboBox)
-					delete myComboBox;
-				if(myScrollBar)
-					delete myScrollBar;
-				if(myButton)
-					delete myButton;
+				// clean the mess
+				for(std::vector<IControlWindow*>::iterator interf = wndInterfaces.begin(); interf < wndInterfaces.end(); interf++){
+					if((*interf)) // if interface != NULL
+						delete *interf;
+				}
 			}
 			break;
 	}
@@ -302,6 +373,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR lpCmdLine, int nShowCmd){
+
 	hInst = hInstance;
 
 	WNDCLASS wnd;

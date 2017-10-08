@@ -312,18 +312,17 @@ public:
 		return true;
 	}
 
-	int notify(HWND hwndCtl, int wID, int wNotifyCode){
+	bool notify(HWND hwndCtl, int wID, int wNotifyCode){
 		if(hwndCtl == hWnd){
 			std::map<int, INotificationCommand*>::iterator notifyFu = notificationsMap.find(wNotifyCode);
 			if(notifyFu != notificationsMap.end()){
 				if(notifyFu->second){
 					notifyFu->second->notify();
-					return wNotifyCode;
 				}
 			}
-			return 1;
+			return true;
 		}
-		return 0;
+		return false;
 	}
 
 	void sendNotificationCommand(int notify){
