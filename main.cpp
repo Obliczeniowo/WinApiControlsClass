@@ -1,6 +1,7 @@
 #include <windows.h>
 
 #include "all_basic_controls.h"
+#include "wndtooltip.h" // to use this you must add comctl32.lib to project
 
 HINSTANCE hInst;
 
@@ -120,6 +121,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	static WndButton*		myButton;
 	static WndButton*		myRadioButton;
 	static WndButton*		myCheckBoxButton;
+	
+	static WndTooltip*		myTooltip;
+	static char* text = "Some super long text to fucking show in my extra super tooltip window";
 
 	static std::vector<IControlWindow*> wndInterfaces;
 
@@ -325,6 +329,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 
 				myRadioButton->setRadioButtonStyle(true);
 
+				myTooltip = new WndTooltip(
+						"klinij mnie no proszê,\nno nie b¹dŸ takim ³osiem.\nPrze¿ ja piêknie proszê,\nno kurdê, kliknij proszê!\n\nI z pi¹tku na sobot¹\nW robocie gdzieœ pod p³otem\nCelowo albo skrycie\nNo kliknij mnie ju¿ dziesiaj\n\nJu¿ nawet ludzie w klopie\nklikaj¹ mnie na codzieñ\nA ty siê ci¹gle wachasz\nNo czego ty siê strachasz?",
+						(HWND) (*myButton), // handle to control that tooltip message is connected
+						hWnd,				// handle to parent global window
+						hInst				// handle to application instance
+					);
+				myTooltip->setTitle("Kliknij mnie!"); // add some title to tooltip control
+
+				myTooltip->setBallonTooltip(true); // set ballon tooltip style
+				myTooltip->setBackgroundColor(RGB(255,205,0)); // change background color
+				myTooltip->setTextColor(RGB(0,0,255)); // change text color
+
 				wndInterfaces.push_back(myEdit);
 				wndInterfaces.push_back(myScrollBar);
 				wndInterfaces.push_back(myListBox);
@@ -333,6 +349,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				wndInterfaces.push_back(myButton);
 				wndInterfaces.push_back(myCheckBoxButton);
 				wndInterfaces.push_back(myRadioButton);
+				wndInterfaces.push_back(myTooltip);
 			}
 			break;
 		case WM_HSCROLL:
@@ -342,6 +359,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				HWND ctrl = HWND(lParam);
 
 				if(myScrollBar->wmScrollNotify(ctrl, pos, id))
+					break;
+			}
+			break;
+		case WM_NOTIFY: 
+			{
+				/*UINT w = TTN_NEEDTEXT;
+				UINT w2 = ((LPNMHDR) lParam)->code;
+				if(((LPNMHDR) lParam)->code == TTN_GETDISPINFO) {
+					LPNMTTDISPINFO lpnmtdi =( LPNMTTDISPINFO ) lParam;
+					
+					lpnmtdi->lpszText = text;
+					lpnmtdi->hinst = NULL;
+					lpnmtdi->uFlags = TTF_DI_SETITEM;
+				    
+				}*/
+				if(myTooltip->wmNotify(lParam))
 					break;
 			}
 			break;

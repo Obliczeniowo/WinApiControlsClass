@@ -91,6 +91,49 @@ public:
 	virtual ~INotificationCommand(){}
 };
 
+class IWmNotificationCommand {
+public:
+	virtual void notify(LPARAM lParam) = 0;
+	virtual ~IWmNotificationCommand(){}
+};
+
+class IWmNotify{
+protected:
+	std::map<int, IWmNotificationCommand*> wmNotifications;
+	bool wmNotify(LPARAM lParam, HWND hWnd){
+		LPNMHDR lpnmhdr = LPNMHDR(lParam);
+		if(lpnmhdr->hwndFrom != hWnd){
+			return false;
+		}
+
+		std::map<int, IWmNotificationCommand*>::iterator wmcommand = wmNotifications.find(lpnmhdr->code);
+		if(wmcommand != wmNotifications.end()){
+			wmcommand->second->notify(lParam);
+		}
+
+		return true;
+	}
+
+public:
+	virtual bool wmNotify(LPARAM lParam) = 0;
+
+	void addWmNotification(int wmNotifyCommand, IWmNotificationCommand* inc){
+		std::map<int, IWmNotificationCommand*>::iterator wmcommand = wmNotifications.find(wmNotifyCommand);
+		if(wmcommand != wmNotifications.end()){
+			if(wmcommand->second)
+				delete wmcommand->second;
+		}
+		wmNotifications[wmNotifyCommand] = inc;
+	}
+
+	virtual ~IWmNotify(){
+		for(std::map<int, IWmNotificationCommand*>::iterator command = wmNotifications.begin(); command != wmNotifications.end(); command ++){
+			if(command->second)
+				delete command->second;
+		}
+	}
+};
+
 class IControlWindow;
 
 typedef void (*notificationFuPtr)(IControlWindow*, LPVOID);
@@ -118,6 +161,10 @@ public:
 			}
 		}
 	};
+
+	inline virtual bool wmNotify(LPNMHDR lpnmhdr){
+		return false;
+	}
 
 	operator HWND(){
 		return hWnd;
@@ -308,6 +355,11 @@ public:
 	}
 
 	bool addNotification(int notify, INotificationCommand* nc) {
+		if(notificationsMap.find(notify) != notificationsMap.end()){
+			if(notificationsMap[notify]){
+				delete notificationsMap[notify];
+			}
+		}
 		notificationsMap[notify] = nc;
 		return true;
 	}
