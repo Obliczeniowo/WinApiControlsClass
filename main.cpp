@@ -364,18 +364,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			break;
 		case WM_NOTIFY: 
 			{
-				/*UINT w = TTN_NEEDTEXT;
-				UINT w2 = ((LPNMHDR) lParam)->code;
-				if(((LPNMHDR) lParam)->code == TTN_GETDISPINFO) {
-					LPNMTTDISPINFO lpnmtdi =( LPNMTTDISPINFO ) lParam;
-					
-					lpnmtdi->lpszText = text;
-					lpnmtdi->hinst = NULL;
-					lpnmtdi->uFlags = TTF_DI_SETITEM;
-				    
-				}*/
-				if(myTooltip->wmNotify(lParam))
-					break;
+				/*if(myTooltip->wmNotify(lParam))
+					break;*/
+				for(std::vector<IControlWindow*>::iterator interf = wndInterfaces.begin(); interf < wndInterfaces.end(); interf++){
+					if((*interf)->wmNotify(lParam)) // do wm notify of controls stuff
+						break;
+				}
 			}
 			break;
 		case WM_COMMAND:

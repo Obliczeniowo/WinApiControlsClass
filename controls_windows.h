@@ -162,7 +162,7 @@ public:
 		}
 	};
 
-	inline virtual bool wmNotify(LPNMHDR lpnmhdr){
+	inline virtual bool wmNotify(LPARAM lParam){
 		return false;
 	}
 
