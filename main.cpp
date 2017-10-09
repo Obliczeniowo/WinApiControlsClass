@@ -123,7 +123,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	static WndButton*		myCheckBoxButton;
 	
 	static WndTooltip*		myTooltip;
-	static char* text = "Some super long text to fucking show in my extra super tooltip window";
+	static WndTooltip*		myRadioButtonToolTip;
+	static WndTooltip*		myCheckBoxButtonToolTip;
 
 	static std::vector<IControlWindow*> wndInterfaces;
 
@@ -332,7 +333,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				myTooltip = new WndTooltip(
 						"klinij mnie no proszê,\nno nie b¹dŸ takim ³osiem.\nPrze¿ ja piêknie proszê,\nno kurdê, kliknij proszê!\n\nI z pi¹tku na sobot¹\nW robocie gdzieœ pod p³otem\nCelowo albo skrycie\nNo kliknij mnie ju¿ dziesiaj\n\nJu¿ nawet ludzie w klopie\nklikaj¹ mnie na codzieñ\nA ty siê ci¹gle wachasz\nNo czego ty siê strachasz?",
 						(HWND) (*myButton), // handle to control that tooltip message is connected
-						hWnd,				// handle to parent global window
 						hInst				// handle to application instance
 					);
 				myTooltip->setTitle("Kliknij mnie!"); // add some title to tooltip control
@@ -340,6 +340,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				myTooltip->setBallonTooltip(true); // set ballon tooltip style
 				myTooltip->setBackgroundColor(RGB(255,205,0)); // change background color
 				myTooltip->setTextColor(RGB(0,0,255)); // change text color
+
+				myRadioButtonToolTip = new WndTooltip("Ten przycisk radio button po klikniêciu zmienia tekst w kontrolce myEdit", (HWND)*myRadioButton, hInst);
+
+				myCheckBoxButtonToolTip = new WndTooltip("Ten przycisk check box button po klikniêciu zmienia tekst w kontrolce myEdit", (HWND)*myCheckBoxButton, hInst);
 
 				wndInterfaces.push_back(myEdit);
 				wndInterfaces.push_back(myScrollBar);
@@ -350,6 +354,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				wndInterfaces.push_back(myCheckBoxButton);
 				wndInterfaces.push_back(myRadioButton);
 				wndInterfaces.push_back(myTooltip);
+				wndInterfaces.push_back(myRadioButtonToolTip);
+				wndInterfaces.push_back(myCheckBoxButtonToolTip);
 			}
 			break;
 		case WM_HSCROLL:
@@ -364,8 +370,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			break;
 		case WM_NOTIFY: 
 			{
-				/*if(myTooltip->wmNotify(lParam))
-					break;*/
 				for(std::vector<IControlWindow*>::iterator interf = wndInterfaces.begin(); interf < wndInterfaces.end(); interf++){
 					if((*interf)->wmNotify(lParam)) // do wm notify of controls stuff
 						break;
@@ -382,6 +386,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 					if((*interf)->notify(ctrl, id, nc)) // do notifications of controls stuff
 						break;
 				}
+			}
+			break;
+		case WM_LBUTTONDOWN:
+			{
+				myTooltip->addWmNotification(TTN_GETDISPINFO, new OnWmNotifyGetDispInfo(hWnd, "I add some new interesting informations stuff"));
+				myTooltip->setTitle("Some new info stuff");
 			}
 			break;
 		case WM_DESTROY:

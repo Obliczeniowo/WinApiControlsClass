@@ -17,37 +17,37 @@ namespace ws{
 	}
 }
 
-class WndTooltip : public IControlWindow, public IWmNotify {
-	
-	class OnWmNotifyGetDispInfo : public IWmNotificationCommand{
-	public:
-		HWND from;
-		char* toolTipText;
-
-		OnWmNotifyGetDispInfo(HWND from, const char* toolTipText) : from(from){
-			this->toolTipText = new char[strlen(toolTipText) + 1];
-			strcpy(this->toolTipText, toolTipText);
-		}
-
-		virtual void notify(LPARAM lParam){
-			LPNMTTDISPINFO lpnmtdi =(LPNMTTDISPINFO)lParam;
-
-			lpnmtdi->lpszText	= toolTipText;
-			lpnmtdi->hinst		= NULL;
-			lpnmtdi->uFlags		= TTF_DI_SETITEM;
-		}
-
-		virtual ~OnWmNotifyGetDispInfo(){
-			if(toolTipText)
-				delete toolTipText;
-		}
-	};
+class OnWmNotifyGetDispInfo : public IWmNotificationCommand{
 public:
-	WndTooltip(LPCTSTR lpWindowName, HWND hWndParent, HWND hwndGl, HINSTANCE hInstance){
+	HWND from;
+	char* toolTipText;
+
+	OnWmNotifyGetDispInfo(HWND from, const char* toolTipText) : from(from){
+		this->toolTipText = new char[strlen(toolTipText) + 1];
+		strcpy(this->toolTipText, toolTipText);
+	}
+
+	virtual void notify(LPARAM lParam){
+		LPNMTTDISPINFO lpnmtdi =(LPNMTTDISPINFO)lParam;
+
+		lpnmtdi->lpszText	= toolTipText;
+		lpnmtdi->hinst		= NULL;
+		lpnmtdi->uFlags		= 0;//TTF_DI_SETITEM;
+	}
+
+	virtual ~OnWmNotifyGetDispInfo(){
+		if(toolTipText)
+			delete toolTipText;
+	}
+};
+
+class WndTooltip : public IControlWindow, public IWmNotify {
+public:
+	WndTooltip(LPCTSTR lpWindowName, HWND hWndParent, HINSTANCE hInstance){
 		createWindow( lpWindowName, ws::window::ws_popup | ws::tooltip::tts_noprefix | ws::tooltip::tts_alwaystip, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hWndParent, NULL, hInstance, NULL);
 		SetWindowPos( hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE );
 
-		addTool(lpWindowName, hWndParent, hwndGl);
+		addTool(hWndParent, getParentWindow());
 		setMaxWidth(200);
 		addWmNotification(TTN_GETDISPINFO, new OnWmNotifyGetDispInfo(hWnd, lpWindowName));
 	}
@@ -64,14 +64,14 @@ public:
 		return IWmNotify::wmNotify(lParam, hWnd);
 	}
 
-	void addTool(std::string tooltiptext, HWND hWndParent, HWND hwndGl){
+	void addTool(HWND hWndParent, HWND hwndGl){
 		TOOLINFO ti;
 		ti.cbSize	= sizeof(TOOLINFO);
 		ti.uFlags	= TTF_SUBCLASS | TTF_IDISHWND;
 		ti.uId		= (UINT_PTR) hWndParent;
 		ti.hwnd		= hwndGl;
 		ti.hinst	= NULL;
-		ti.lpszText	= LPSTR_TEXTCALLBACK;//(LPSTR) tooltiptext.c_str();
+		ti.lpszText	= LPSTR_TEXTCALLBACK;
 
 		RECT rect;
 
