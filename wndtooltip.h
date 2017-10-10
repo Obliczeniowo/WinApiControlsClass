@@ -22,68 +22,24 @@ public:
 	HWND from;
 	char* toolTipText;
 
-	OnWmNotifyGetDispInfo(HWND from, const char* toolTipText) : from(from){
-		this->toolTipText = new char[strlen(toolTipText) + 1];
-		strcpy(this->toolTipText, toolTipText);
-	}
+	OnWmNotifyGetDispInfo(HWND from, const char* toolTipText);
 
-	virtual void notify(LPARAM lParam){
-		LPNMTTDISPINFO lpnmtdi =(LPNMTTDISPINFO)lParam;
+	virtual void notify(LPARAM lParam);
 
-		lpnmtdi->lpszText	= toolTipText;
-		lpnmtdi->hinst		= NULL;
-		lpnmtdi->uFlags		= 0;//TTF_DI_SETITEM;
-	}
-
-	virtual ~OnWmNotifyGetDispInfo(){
-		if(toolTipText)
-			delete toolTipText;
-	}
+	virtual ~OnWmNotifyGetDispInfo();
 };
 
 class WndTooltip : public IControlWindow, public IWmNotify {
 public:
-	WndTooltip(LPCTSTR lpWindowName, HWND hWndParent, HINSTANCE hInstance){
-		createWindow( lpWindowName, ws::window::ws_popup | ws::tooltip::tts_noprefix | ws::tooltip::tts_alwaystip, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, hWndParent, NULL, hInstance, NULL);
-		SetWindowPos( hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE );
-
-		addTool(hWndParent, getParentWindow());
-		setMaxWidth(200);
-		addWmNotification(TTN_GETDISPINFO, new OnWmNotifyGetDispInfo(hWnd, lpWindowName));
-	}
+	WndTooltip(LPCTSTR lpWindowName, HWND hWndParent, HINSTANCE hInstance);
 	
-	virtual void createWindow(LPCTSTR lpWindowName, DWORD dwStyle, int x, int y, int nWidth, int nHeight, HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam){
-		if(hWnd){
-			DestroyWindow(hWnd);
-		}
-
-		hWnd = CreateWindowEx(ws::window_ex::ws_ex_topmost, TOOLTIPS_CLASS, lpWindowName, dwStyle, x, y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
-	}
+	virtual void createWindow(LPCTSTR lpWindowName, DWORD dwStyle, int x, int y, int nWidth, int nHeight, HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam);
 
 	virtual bool wmNotify(LPARAM lParam){
 		return IWmNotify::wmNotify(lParam, hWnd);
 	}
 
-	void addTool(HWND hWndParent, HWND hwndGl){
-		TOOLINFO ti;
-		ti.cbSize	= sizeof(TOOLINFO);
-		ti.uFlags	= TTF_SUBCLASS | TTF_IDISHWND;
-		ti.uId		= (UINT_PTR) hWndParent;
-		ti.hwnd		= hwndGl;
-		ti.hinst	= NULL;
-		ti.lpszText	= LPSTR_TEXTCALLBACK;
-
-		RECT rect;
-
-		GetClientRect(hWndParent, &rect);
-
-		ti.rect.left = rect.left;
-		ti.rect.top = rect.top;
-		ti.rect.right = rect.right;
-		ti.rect.bottom = rect.bottom;
-
-		SendMessage(hWnd, TTM_ADDTOOL, 0, (LPARAM) &ti);
-	}
+	void addTool(HWND hWndParent, HWND hwndGl);
 
 	inline void setBallonTooltip(bool ballon){
 		setWindowStyle(ballon, ws::tooltip::tts_ballon);

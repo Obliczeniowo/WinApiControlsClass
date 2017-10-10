@@ -85,53 +85,28 @@ namespace ws{
 	}
 }
 
-class INotificationCommand {
+class INotificationCommand {	// abstract class for WM_COMMAND command class
 public:
 	virtual void notify() = 0;
 	virtual ~INotificationCommand(){}
 };
 
-class IWmNotificationCommand {
+class IWmNotificationCommand {	// abstract class for WM_NOTIFY command class
 public:
 	virtual void notify(LPARAM lParam) = 0;
 	virtual ~IWmNotificationCommand(){}
 };
 
-class IWmNotify{
+class IWmNotify{ // abstract class for WM_NOTIFY command use in Wnd family class
 protected:
 	std::map<int, IWmNotificationCommand*> wmNotifications;
-	bool wmNotify(LPARAM lParam, HWND hWnd){
-		LPNMHDR lpnmhdr = LPNMHDR(lParam);
-		if(lpnmhdr->hwndFrom != hWnd){
-			return false;
-		}
-
-		std::map<int, IWmNotificationCommand*>::iterator wmcommand = wmNotifications.find(lpnmhdr->code);
-		if(wmcommand != wmNotifications.end()){
-			wmcommand->second->notify(lParam);
-		}
-
-		return true;
-	}
-
+	bool wmNotify(LPARAM lParam, HWND hWnd);
 public:
 	virtual bool wmNotify(LPARAM lParam) = 0;
 
-	void addWmNotification(int wmNotifyCommand, IWmNotificationCommand* inc){
-		std::map<int, IWmNotificationCommand*>::iterator wmcommand = wmNotifications.find(wmNotifyCommand);
-		if(wmcommand != wmNotifications.end()){
-			if(wmcommand->second)
-				delete wmcommand->second;
-		}
-		wmNotifications[wmNotifyCommand] = inc;
-	}
+	void addWmNotification(int wmNotifyCommand, IWmNotificationCommand* inc);
 
-	virtual ~IWmNotify(){
-		for(std::map<int, IWmNotificationCommand*>::iterator command = wmNotifications.begin(); command != wmNotifications.end(); command ++){
-			if(command->second)
-				delete command->second;
-		}
-	}
+	virtual ~IWmNotify();
 };
 
 class IControlWindow;
@@ -147,20 +122,7 @@ public:
 	IControlWindow() : hWnd(NULL), destroy(true){};
 	virtual void createWindow(LPCTSTR lpWindowName, DWORD dwStyle, int x, int y, int nWidth, int nHeight, HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam) = 0;
 
-	virtual ~IControlWindow(){
-		if(hWnd && destroy){
-			DestroyWindow(hWnd);
-			hWnd = NULL;
-		}
-
-		if(!notificationsMap.empty()){
-			for(std::map<int, INotificationCommand*>::iterator i = notificationsMap.begin(); i != notificationsMap.end(); i++){
-				if(i->second){
-					delete i->second;
-				}
-			}
-		}
-	};
+	virtual ~IControlWindow();
 
 	inline virtual bool wmNotify(LPARAM lParam){
 		return false;
@@ -170,63 +132,34 @@ public:
 		return hWnd;
 	}
 
-	std::string getWindowText() const{
-		std::string wndText;
-		if(hWnd){
-			int length = GetWindowTextLength(hWnd);
-			if(length > 0){
-				char *text = new char[length + 1];
+	std::string getWindowText() const;
 
-				GetWindowText(hWnd, text, length + 1);
-
-				wndText += text;
-
-				delete text;
-			}
-		}
-
-		return wndText;
-	}
-
-	void setWindowText(std::string windowText){
+	inline void setWindowText(std::string windowText){
 		SetWindowText(hWnd, windowText.c_str());
 	}
 
-	void setWindowText(LPCSTR windowText){
+	inline void setWindowText(LPCSTR windowText){
 		SetWindowText(hWnd, windowText);
 	}
 
-	void getWindowPos(POINT &p) const {
-		RECT rect;
-		GetWindowRect(hWnd, &rect);
-		p.x = rect.left;
-		p.y = rect.top;
-	}
+	void getWindowPos(POINT &p) const;
 
-	void setWindowPos(int x, int y){
+	inline void setWindowPos(int x, int y){
 		SetWindowPos(hWnd, NULL, x, y, 0, 0, SWP_NOSIZE|SWP_NOZORDER);
 	}
 
-	void getWindowSize(SIZE &wndSize) const {
-		wndSize.cx = wndSize.cy = -1;
-		RECT wndRect;
-		GetWindowRect(hWnd, &wndRect);
-		wndSize.cx = wndRect.right - wndRect.left;
-		wndSize.cy = wndRect.bottom - wndRect.top;
-	}
+	void getWindowSize(SIZE &wndSize) const;
 
-	void setWindowSize(UINT width, UINT height){
+	inline void setWindowSize(UINT width, UINT height){
 		SetWindowPos(hWnd, NULL, 0, 0, width, height, SWP_NOMOVE|SWP_NOZORDER);
 	}
 
-	void hideWindow(){
-		LONG style = (LONG) GetWindowLongPtr(hWnd, GWL_STYLE) ^ WS_VISIBLE;
-		SetWindowLongPtr(hWnd, GWL_STYLE, style);
+	inline void hideWindow(){
+		SetWindowLongPtr(hWnd, GWL_STYLE, (LONG) GetWindowLongPtr(hWnd, GWL_STYLE) ^ WS_VISIBLE);
 	}
 
-	void showWindow(){
-		LONG style = (LONG) GetWindowLongPtr(hWnd, GWL_STYLE) | WS_VISIBLE;
-		SetWindowLong(hWnd, GWL_STYLE, style);
+	inline void showWindow(){
+		SetWindowLong(hWnd, GWL_STYLE, (LONG) GetWindowLongPtr(hWnd, GWL_STYLE) | WS_VISIBLE);
 	}
 
 	inline HINSTANCE getHinstance() const {
@@ -257,7 +190,7 @@ public:
 		SetWindowLongPtr(hWnd, GWL_EXSTYLE, styleEx);
 	}
 
-	inline void setWindowStyle(bool add, LONG style){
+	void setWindowStyle(bool add, LONG style){
 		LONG cstyle = (LONG)GetWindowLongPtr(hWnd, GWL_STYLE);
 		add ? SetWindowLongPtr(hWnd, GWL_STYLE, cstyle | style) : SetWindowLongPtr(hWnd, GWL_STYLE, (cstyle & style) ? cstyle ^ style : cstyle);
 	}
@@ -286,18 +219,13 @@ public:
 		SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)wndproc);
 	}
 
-	std::string getWindowClassName(){
-		char classname[255];
-		GetClassName(hWnd, classname, 255);
+	std::string getWindowClassName() const;
 
-		return std::string(classname);
-	}
-
-	HBRUSH getWindowBrush(){
+	inline HBRUSH getWindowBrush() const {
 		return (HBRUSH) GetClassLongPtr(hWnd, GCLP_HBRBACKGROUND);
 	}
 
-	HBRUSH setWindowBrush(HBRUSH hBrush){
+	inline HBRUSH setWindowBrush(HBRUSH hBrush){
 		return (HBRUSH) SetClassLongPtr(hWnd, GCLP_HBRBACKGROUND, (LONG_PTR) hBrush);
 	}
 
@@ -354,30 +282,11 @@ public:
 		return IsWindowVisible(hWnd);
 	}
 
-	bool addNotification(int notify, INotificationCommand* nc) {
-		if(notificationsMap.find(notify) != notificationsMap.end()){
-			if(notificationsMap[notify]){
-				delete notificationsMap[notify];
-			}
-		}
-		notificationsMap[notify] = nc;
-		return true;
-	}
+	bool addNotification(int notify, INotificationCommand* nc);
 
-	bool notify(HWND hwndCtl, int wID, int wNotifyCode){
-		if(hwndCtl == hWnd){
-			std::map<int, INotificationCommand*>::iterator notifyFu = notificationsMap.find(wNotifyCode);
-			if(notifyFu != notificationsMap.end()){
-				if(notifyFu->second){
-					notifyFu->second->notify();
-				}
-			}
-			return true;
-		}
-		return false;
-	}
+	bool notify(HWND hwndCtl, int wID, int wNotifyCode);
 
-	void sendNotificationCommand(int notify){
+	inline void sendNotificationCommand(int notify){
 		SendMessage(GetParent(hWnd), WM_COMMAND, MAKEWPARAM((UINT)getWindowId(), notify), (LPARAM)hWnd);
 	}
 };

@@ -1,5 +1,5 @@
-#ifndef EX_CONTROLS_WINDOW_H
-#define EX_CONTROLS_WINDOW_H
+#ifndef EX_CONTROLS_WINDOWS_H
+#define EX_CONTROLS_WINDOWS_H
 
 #include "controls_windows.h"
 #include <commctrl.h> // to use this you must add comctl32.lib
@@ -26,11 +26,6 @@ namespace icc{											// init common controls
 	};
 }
 
-BOOL initializeControls(int init_icc){
-	INITCOMMONCONTROLSEX	iccex;
-	iccex.dwICC				= init_icc;
-	iccex.dwSize			= sizeof( INITCOMMONCONTROLSEX );
-	return InitCommonControlsEx( &iccex );
-}
+BOOL initializeControls(int init_icc);
 
 #endif

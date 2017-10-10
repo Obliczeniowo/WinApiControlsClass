@@ -5,110 +5,7 @@
 
 HINSTANCE hInst;
 
-class OnScrollChanged : public INotificationCommand {
-public:
-	WndEdit*		edit;
-	WndScrollBar*	scrollbar;
-
-	OnScrollChanged(WndEdit* edit, WndScrollBar* scrollbar) : edit(edit), scrollbar(scrollbar){}
-
-	virtual void notify(){
-		char cPos[50];
-		ltoa(scrollbar->getScrollPos(), cPos, 10);
-		edit->setWindowText(cPos);
-	}
-};
-
-class OnListBoxSelChanged : public INotificationCommand{
-public:
-	WndEdit*	edit;
-	WndListBox*	listbox;
-
-	OnListBoxSelChanged(WndEdit* edit, WndListBox* listbox) : edit(edit), listbox(listbox){}
-
-	virtual void notify(){
-		edit->setWindowText(listbox->getItemText(listbox->getCurrentSelectedIndex()));
-	}
-};
-
-class OnComboBoxSelChanged : public INotificationCommand{
-public:
-	WndEdit*		edit;
-	WndComboBox*	combobox;
-
-	OnComboBoxSelChanged(WndEdit* edit, WndComboBox* combobox) : edit(edit), combobox(combobox){}
-
-	virtual void notify(){
-		edit->setWindowText(combobox->getSelectedText());
-	}
-};
-
-class OnListBoxDblClick : public INotificationCommand{
-public:
-	WndEdit*	edit;
-	WndListBox*	listbox;
-
-	OnListBoxDblClick(WndEdit* edit, WndListBox* listbox) : edit(edit), listbox(listbox){}
-
-	virtual void notify(){
-		
-		MessageBox(listbox->getParentWindow(), listbox->getItemText(listbox->getCurrentSelectedIndex()).c_str(), "CLICKED", MB_OK);
-	}
-};
-
-class OnLabelClick : public INotificationCommand{
-public:
-	WndLabel* label;
-
-	OnLabelClick(WndLabel* label) : label(label){}
-
-	virtual void notify(){
-		MessageBox(label->getParentWindow(), label->getWindowText().c_str(), "Label (STATIC) control clicked", MB_OK);
-	}
-};
-
-class OnButtonClicked : public INotificationCommand{
-public:
-	WndButton*	button;
-
-	OnButtonClicked(WndButton* button) : button(button) {}
-
-	virtual void notify(){
-		MessageBox(button->getParentWindow(), "Klikn¹³eœ przycisk", "CLICKED", MB_OK);
-	}
-};
-
-class OnCheckBoxButtonClicked : public INotificationCommand{
-public:
-	WndButton*	button;
-	WndEdit*	edit;
-
-	OnCheckBoxButtonClicked(WndButton* button, WndEdit* edit) : button(button), edit(edit) {}
-
-	virtual void notify(){
-		if(button->toggleButtonState() == WndButton::checkState::checked ){
-			edit->setWindowText("Check box button checked");
-		}else{
-			edit->setWindowText("Check box button unchecked");
-		}
-	}
-};
-
-class OnRadioButtonClicked : public INotificationCommand{
-public:
-	WndButton*	button;
-	WndEdit*	edit;
-
-	OnRadioButtonClicked(WndButton* button, WndEdit* edit) : button(button), edit(edit) {}
-
-	virtual void notify(){
-		if(button->toggleButtonState() == WndButton::checkState::checked ){
-			edit->setWindowText("Radio button checked");
-		}else{
-			edit->setWindowText("Radio button unchecked");
-		}
-	}
-};
+#include "notifications_command_classes.h"
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	static HFONT			font;
@@ -122,9 +19,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 	static WndButton*		myRadioButton;
 	static WndButton*		myCheckBoxButton;
 	
-	static WndTooltip*		myTooltip;
-	static WndTooltip*		myRadioButtonToolTip;
-	static WndTooltip*		myCheckBoxButtonToolTip;
+	static WndTooltip*		myButtonTooltip;
+	static WndTooltip*		myRadioButtonTooltip;
+	static WndTooltip*		myCheckBoxButtonTooltip;
+	static WndTooltip*		myComboBoxTooltip;
+	static WndTooltip*		myLabelTooltip;
 
 	static std::vector<IControlWindow*> wndInterfaces;
 
@@ -185,7 +84,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				myScrollBar->setThumbtract(true); // this means that when user move control slider then value of nPos Scroll Bar is changed
 				// add some notification command for myScrollBar object control
 				myScrollBar->addNotification(WndScrollBar::notifications::wmscroll, new OnScrollChanged(myEdit, myScrollBar));
-				
+
 				myListBox = new WndListBox(		// create WndListBox window object
 					ws::window::ws_hscrollbar|	// with styla: hotizontal scrollbar
 					ws::window::ws_vscrollbar|	// vertical scrollbar
@@ -267,24 +166,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 
 				myComboBox->addNotification(WndComboBox::notifications::selchange, new OnComboBoxSelChanged(myEdit, myComboBox));
 
-				myButton = new WndButton(		// create button control
-						"Kliknij",				// button text
-						ws::window::ws_child|	// button style: as child
-						ws::window::ws_visible|	// as visible
-						ws::button::bs_notify,	// with notification command send to the parent window
-						100,					// x - position
-						214,					// y - position
-						100,					// width
-						20,						// height
-						hWnd,					// parent window handle
-						(HMENU) 5004,			// in this case window id
-						hInst,					// hadle to application instance
-						NULL					// pointer to some extra data (in this case NULL - means no extra data)
+				myButton = new WndButton(			// create button control
+						"Kliknij",					// button text
+						ws::window::ws_child|		// button style: as child
+						ws::window::ws_visible|		// as visible
+						ws::button::bs_notify,		// with notification command send to the parent window
+						100,						// x - position
+						214,						// y - position
+						100,						// width
+						20,							// height
+						hWnd,						// parent window handle
+						(HMENU) 5004,				// in this case window id
+						hInst,						// hadle to application instance
+						NULL						// pointer to some extra data (in this case NULL - means no extra data)
 					);
 
 				myButton->setFont(font);
-
-				myButton->addNotification(WndButton::notifications::clicked, new OnButtonClicked(myButton));
 
 				myCheckBoxButton = new WndButton(	// create button control
 						"Kliknij",					// button text
@@ -307,19 +204,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 
 				myCheckBoxButton->addNotification(WndButton::notifications::clicked, new OnCheckBoxButtonClicked(myCheckBoxButton, myEdit));
 
-				myRadioButton = new WndButton(	// create radio button control
-						"Kliknij",				// button text
-						ws::window::ws_child|	// button style: as child
-						ws::window::ws_visible|	// as visible
-						ws::button::bs_notify,	// with notification command send to the parent window
-						100,					// x - position
-						254,					// y - position
-						100,					// width
-						20,						// height
-						hWnd,					// parent window handle
-						(HMENU) 5004,			// in this case window id
-						hInst,					// hadle to application instance
-						NULL					// pointer to some extra data (in this case NULL - means no extra data)
+				myRadioButton = new WndButton(		// create radio button control
+						"Kliknij",					// button text
+						ws::window::ws_child|		// button style: as child
+						ws::window::ws_visible|		// as visible
+						ws::button::bs_notify,		// with notification command send to the parent window
+						100,						// x - position
+						254,						// y - position
+						100,						// width
+						20,							// height
+						hWnd,						// parent window handle
+						(HMENU) 5004,				// in this case window id
+						hInst,						// hadle to application instance
+						NULL						// pointer to some extra data (in this case NULL - means no extra data)
 					);
 
 				myRadioButton->setFont(font);
@@ -330,21 +227,27 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 
 				myRadioButton->setRadioButtonStyle(true);
 
-				myTooltip = new WndTooltip(
+				myButtonTooltip = new WndTooltip(
 						"klinij mnie no proszê,\nno nie b¹dŸ takim ³osiem.\nPrze¿ ja piêknie proszê,\nno kurdê, kliknij proszê!\n\nI z pi¹tku na sobot¹\nW robocie gdzieœ pod p³otem\nCelowo albo skrycie\nNo kliknij mnie ju¿ dziesiaj\n\nJu¿ nawet ludzie w klopie\nklikaj¹ mnie na codzieñ\nA ty siê ci¹gle wachasz\nNo czego ty siê strachasz?",
-						(HWND) (*myButton), // handle to control that tooltip message is connected
-						hInst				// handle to application instance
+						(HWND) (*myButton),			// handle to control that tooltip message is connected
+						hInst							// handle to application instance
 					);
-				myTooltip->setTitle("Kliknij mnie!"); // add some title to tooltip control
+				myButtonTooltip->setTitle("Kliknij mnie!"); // add some title to tooltip control
 
-				myTooltip->setBallonTooltip(true); // set ballon tooltip style
-				myTooltip->setBackgroundColor(RGB(255,205,0)); // change background color
-				myTooltip->setTextColor(RGB(0,0,255)); // change text color
+				myButtonTooltip->setBallonTooltip(true); // set ballon tooltip style
+				myButtonTooltip->setBackgroundColor(RGB(255,205,0)); // change background color
+				myButtonTooltip->setTextColor(RGB(0,0,255)); // change text color
 
-				myRadioButtonToolTip = new WndTooltip("Ten przycisk radio button po klikniêciu zmienia tekst w kontrolce myEdit", (HWND)*myRadioButton, hInst);
+				myButton->addNotification(WndButton::notifications::clicked, new OnButtonClicked(myButton, myButtonTooltip));
 
-				myCheckBoxButtonToolTip = new WndTooltip("Ten przycisk check box button po klikniêciu zmienia tekst w kontrolce myEdit", (HWND)*myCheckBoxButton, hInst);
+				myRadioButtonTooltip = new WndTooltip("Ten przycisk radio button po klikniêciu zmienia tekst w kontrolce myEdit", (HWND)*myRadioButton, hInst);
 
+				myCheckBoxButtonTooltip = new WndTooltip("Ten przycisk check box button po klikniêciu zmienia tekst w kontrolce myEdit", (HWND)*myCheckBoxButton, hInst);
+
+				myComboBoxTooltip = new WndTooltip("Ta kontrolka combo box po zmianie wybranej opcji wyœwietla zawartoœæ wybranego indeksu w kontrolce myEdti", *myComboBox, hInst);
+
+				myLabelTooltip = new WndTooltip("Po klikniêciu tej kontrolki wyœwietli siê okno komunikatu", *myLabel, hInst);
+				
 				wndInterfaces.push_back(myEdit);
 				wndInterfaces.push_back(myScrollBar);
 				wndInterfaces.push_back(myListBox);
@@ -353,9 +256,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 				wndInterfaces.push_back(myButton);
 				wndInterfaces.push_back(myCheckBoxButton);
 				wndInterfaces.push_back(myRadioButton);
-				wndInterfaces.push_back(myTooltip);
-				wndInterfaces.push_back(myRadioButtonToolTip);
-				wndInterfaces.push_back(myCheckBoxButtonToolTip);
+				wndInterfaces.push_back(myButtonTooltip);
+				wndInterfaces.push_back(myRadioButtonTooltip);
+				wndInterfaces.push_back(myCheckBoxButtonTooltip);
+				wndInterfaces.push_back(myComboBoxTooltip);
+				wndInterfaces.push_back(myLabelTooltip);
 			}
 			break;
 		case WM_HSCROLL:
@@ -390,8 +295,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
 			break;
 		case WM_LBUTTONDOWN:
 			{
-				myTooltip->addWmNotification(TTN_GETDISPINFO, new OnWmNotifyGetDispInfo(hWnd, "I add some new interesting informations stuff"));
-				myTooltip->setTitle("Some new info stuff");
+				myButtonTooltip->addWmNotification(TTN_GETDISPINFO, new OnWmNotifyGetDispInfo(hWnd, "I add some new interesting informations stuff"));
+				myButtonTooltip->setTitle("Some new info stuff");
 			}
 			break;
 		case WM_DESTROY:

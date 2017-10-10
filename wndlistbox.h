@@ -78,20 +78,7 @@ public:
 		return SendMessage(hWnd, LB_SETTOPINDEX, index, NULL);
 	}
 
-	void getSelectedItemsIndexArray(std::vector<int> &itemArray){
-		int selected = getSelectedItemCount();
-		if(selected > 0){
-			int *indexes = new int[selected];
-
-			if(LB_ERR != SendMessage(hWnd, LB_GETSELITEMS, selected, (LPARAM)indexes)){
-				for(int* i = indexes; i < indexes + selected; i++){
-					itemArray.push_back(*i);
-				}
-			}
-
-			delete [] indexes;
-		}
-	}
+	void getSelectedItemsIndexArray(std::vector<int> &itemArray);
 
 	inline LONG getCurrentSelectedIndex() const {
 		return SendMessage(hWnd, LB_GETCURSEL, NULL, NULL);
@@ -109,17 +96,7 @@ public:
 		return SendMessage(hWnd, LB_GETITEMDATA, index, NULL);
 	}
 
-	std::string getItemText(int index) const {
-		std::string t;
-		if(index > -1){
-			int length = (int)SendMessage(hWnd, LB_GETTEXTLEN, index, NULL);
-			char* text = new char[length + 1];
-			SendMessage(hWnd, LB_GETTEXT, index, (LPARAM)text);
-			t = text;
-			delete [] text;
-		}
-		return t;
-	}
+	std::string getItemText(int index) const;
 
 	inline LONG addDir(std::string path, UINT attributes){
 		return SendMessage(hWnd, LB_DIR, attributes, (LPARAM) path.c_str());
